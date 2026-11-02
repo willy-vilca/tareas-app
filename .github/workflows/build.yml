@@ -65,7 +65,7 @@ jobs:
             --dart-define=GIT_SHA="${GITHUB_SHA::7}"
 
       - name: Guardar el resultado como artefacto
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: tareas-${{ matrix.plataforma }}
           path: ${{ matrix.plataforma == 'apk' && 'build/app/outputs/flutter-apk/app-release.apk' || 'build/web' }}
