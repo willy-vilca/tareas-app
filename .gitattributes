@@ -1,0 +1,19 @@
+# Normaliza los finales de línea para que Windows, Linux (runners de
+# GitHub) y macOS trabajen igual.
+* text=auto
+
+# Los scripts de shell y los hooks de Git deben usar LF o fallan en sh.
+*.sh text eol=lf
+.githooks/* text eol=lf
+
+# Los scripts de Windows usan CRLF.
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Binarios
+*.png binary
+*.jpg binary
+*.jks binary
+*.keystore binary
+*.apk binary
+*.aab binary

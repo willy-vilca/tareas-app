@@ -1,0 +1,73 @@
+# =====================================================================
+# EJERCICIO 08 - Despliegue continuo en GitHub Pages + feature flag
+# Destino : .github/workflows/deploy-web.yml
+# Antes   : Settings > Pages > Build and deployment > Source: GitHub Actions
+# Probar  : git push a main (o Actions > "Deploy web" > Run workflow)
+#           y abre https://<usuario>.github.io/<repositorio>/
+#           Feature flag: crea la variable FLAG_ESTADISTICAS = true en
+#           Settings > Secrets and variables > Actions > Variables y vuelve
+#           a ejecutar: aparece la tarjeta de estadísticas sin tocar código.
+# =====================================================================
+name: Deploy web
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Permisos mínimos para publicar en GitHub Pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Un solo despliegue a la vez.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  construir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ vars.FLUTTER_VERSION || '3.x' }}
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Pruebas (si fallan, no se despliega)
+        run: flutter test
+
+      - name: Compilar la web con la configuración de producción
+        env:
+          FLAG: ${{ vars.FLAG_ESTADISTICAS || 'false' }}
+          REPO: ${{ github.event.repository.name }}
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | cut -d' ' -f2 | cut -d'+' -f1)
+          flutter build web --release --base-href "/$REPO/" \
+            --dart-define=ENTORNO=produccion \
+            --dart-define=APP_VERSION="$VERSION" \
+            --dart-define=BUILD_NUMBER="$GITHUB_RUN_NUMBER" \
+            --dart-define=GIT_SHA="${GITHUB_SHA::7}" \
+            --dart-define=FLAG_ESTADISTICAS="$FLAG"
+
+      - name: Subir el sitio para GitHub Pages
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: build/web
+
+  desplegar:
+    needs: construir
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    steps:
+      - name: Publicar en GitHub Pages
+        id: despliegue
+        uses: actions/deploy-pages@v5

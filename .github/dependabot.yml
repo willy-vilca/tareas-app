@@ -1,0 +1,24 @@
+# =====================================================================
+# EJERCICIO 09 - Mantenimiento automático de dependencias (Dependabot)
+# Destino : .github/dependabot.yml        (OJO: no va dentro de workflows/)
+# Probar  : git push. Luego Insights > Dependency graph > Dependabot >
+#           "Check for updates". En unos minutos aparecen Pull Requests
+#           como "chore(deps): bump ..." y el CI (ejercicio 03) los revisa.
+# =====================================================================
+version: 2
+updates:
+  # 1) Paquetes de Dart/Flutter declarados en pubspec.yaml
+  - package-ecosystem: 'pub'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    commit-message:
+      prefix: 'chore(deps)'
+
+  # 2) Acciones usadas en los workflows (actions/checkout, etc.)
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    commit-message:
+      prefix: 'ci(deps)'

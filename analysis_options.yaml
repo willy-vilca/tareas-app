@@ -1,0 +1,31 @@
+# =====================================================================
+# EJERCICIO 01 - Reglas de calidad del código (análisis estático)
+# Destino : analysis_options.yaml   (raíz del proyecto, reemplaza el actual)
+# Probar  : flutter analyze          -> "No issues found!"
+#           Agrega  print('hola');  dentro de main() y vuelve a analizar:
+#           ahora aparece un "error" (avoid_print).
+# =====================================================================
+
+# Partimos de las reglas oficiales recomendadas por el equipo de Flutter.
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  # Subimos la severidad: estas sugerencias ahora son errores.
+  errors:
+    avoid_print: error
+    unused_import: error
+    unused_local_variable: error
+  # No se analizan los archivos generados al compilar.
+  exclude:
+    - build/**
+    - android/**
+    - web/**
+
+linter:
+  rules:
+    - prefer_single_quotes        # comillas simples en todo el proyecto
+    - always_declare_return_types # toda función declara lo que devuelve
+    - prefer_final_locals         # variables que no cambian = final
+    - prefer_const_constructors   # widgets constantes = mejor rendimiento
+    - directives_ordering         # imports ordenados alfabéticamente
+    - avoid_void_async            # una función async debe devolver Future

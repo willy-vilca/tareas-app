@@ -1,0 +1,63 @@
+# =====================================================================
+# EJERCICIO 07 - Release automático al crear una etiqueta (tag)
+# Destino : .github/workflows/release.yml
+# Probar  : dart run tool/version.dart minor          (ejercicio 05)
+#           git commit -am "chore: versión 1.1.0" && git push
+#           git tag v1.1.0 && git push origin v1.1.0
+#           -> pestaña Releases: "TareasApp v1.1.0" con el APK y notas
+# =====================================================================
+name: Release
+
+on:
+  push:
+    tags: ['v*'] # se ejecuta al subir una etiqueta como v1.1.0
+
+permissions:
+  contents: write # necesario para crear el release
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ vars.FLUTTER_VERSION || '3.x' }}
+          cache: true
+
+      - run: flutter pub get
+
+      - name: 1. Verificar que el tag coincide con pubspec.yaml
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | cut -d' ' -f2 | cut -d'+' -f1)
+          if [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::El tag $GITHUB_REF_NAME no coincide con pubspec.yaml (v$VERSION)"
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: 2. Pruebas (nunca se publica código roto)
+        run: flutter test
+
+      - name: 3. Compilar el APK de la versión
+        run: |
+          flutter build apk --release \
+            --dart-define=ENTORNO=produccion \
+            --dart-define=APP_VERSION="$VERSION" \
+            --dart-define=GIT_SHA="${GITHUB_SHA::7}"
+          cp build/app/outputs/flutter-apk/app-release.apk "tareas-app-$GITHUB_REF_NAME.apk"
+
+      - name: 4. Crear el release con notas automáticas
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # secreto automático de GitHub
+        run: |
+          gh release create "$GITHUB_REF_NAME" "tareas-app-$GITHUB_REF_NAME.apk" \
+            --title "TareasApp $GITHUB_REF_NAME" \
+            --generate-notes

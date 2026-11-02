@@ -1,0 +1,72 @@
+# =====================================================================
+# EJERCICIO 06 - Pipeline por etapas: pruebas y build de APK y web
+# Destino : .github/workflows/build.yml
+# Probar  : Actions > "Build" > Run workflow  (unos 6 minutos)
+#           Al terminar, en "Artifacts" se descargan el APK y la web.
+# =====================================================================
+name: Build
+
+on:
+  workflow_dispatch: # se ejecuta a mano con el botón "Run workflow"
+
+permissions:
+  contents: read
+
+jobs:
+  # ETAPA 1: si alguna prueba falla, no se compila nada.
+  pruebas:
+    name: 1. Pruebas
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ vars.FLUTTER_VERSION || '3.x' }}
+          cache: true
+      - run: flutter pub get
+      - run: flutter test
+
+  # ETAPA 2: compila APK y web al mismo tiempo (matriz).
+  build:
+    name: 2. Build ${{ matrix.plataforma }}
+    needs: pruebas # solo empieza si la etapa 1 terminó bien
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        plataforma: [apk, web]
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Instalar Java 17 (solo para Android)
+        if: matrix.plataforma == 'apk'
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ vars.FLUTTER_VERSION || '3.x' }}
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Compilar (con versión, build y commit dentro de la app)
+        env:
+          PLATAFORMA: ${{ matrix.plataforma }}
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | cut -d' ' -f2 | cut -d'+' -f1)
+          flutter build "$PLATAFORMA" --release \
+            --dart-define=ENTORNO=pruebas \
+            --dart-define=APP_VERSION="$VERSION" \
+            --dart-define=BUILD_NUMBER="$GITHUB_RUN_NUMBER" \
+            --dart-define=GIT_SHA="${GITHUB_SHA::7}"
+
+      - name: Guardar el resultado como artefacto
+        uses: actions/upload-artifact@v6
+        with:
+          name: tareas-${{ matrix.plataforma }}
+          path: ${{ matrix.plataforma == 'apk' && 'build/app/outputs/flutter-apk/app-release.apk' || 'build/web' }}
+          retention-days: 7

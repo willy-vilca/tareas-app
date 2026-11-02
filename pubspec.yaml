@@ -1,0 +1,25 @@
+name: tareas_app
+description: >-
+  App base del Módulo 38 (Mantenimiento, CI/CD y DevOps móvil).
+  Gestor de tareas sencillo que sirve para practicar pipelines de
+  integración y entrega continua.
+publish_to: 'none'
+
+# Versión semántica (MAYOR.MENOR.PARCHE) + número de build (versionCode).
+# El ejercicio 05 automatiza su actualización.
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_lints: ^5.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

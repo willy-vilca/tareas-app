@@ -1,0 +1,26 @@
+# Archivos generados por Dart/Flutter
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+coverage/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+
+# Secretos: NUNCA deben subirse al repositorio (ver ejercicio 02)
+*.jks
+*.keystore
+key.properties
+.env
+*.env
+keystore_base64.txt

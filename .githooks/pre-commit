@@ -1,0 +1,42 @@
+#!/bin/sh
+# =====================================================================
+# EJERCICIO 02 - Hook pre-commit: revisar el código antes de cada commit
+# Destino : .githooks/pre-commit   (SIN extensión .sh)
+# Activar : git config core.hooksPath .githooks
+# Probar  : intenta hacer commit de un archivo .jks o de código sin
+#           formato -> "RECHAZADO". Con el código correcto -> "OK".
+# =====================================================================
+
+echo "[pre-commit] Revisando el commit..."
+
+# En Windows (Git Bash) los comandos pueden llamarse flutter.bat / dart.bat
+FLUTTER=flutter
+command -v flutter >/dev/null 2>&1 || FLUTTER=flutter.bat
+DART=dart
+command -v dart >/dev/null 2>&1 || DART=dart.bat
+
+# 1) Ningún secreto (llaves, contraseñas) debe llegar al repositorio.
+SECRETOS=$(git diff --cached --name-only | grep -E '\.(jks|keystore|env)$|key\.properties$')
+if [ -n "$SECRETOS" ]; then
+  echo "[pre-commit] RECHAZADO: no subas estos archivos secretos:"
+  echo "$SECRETOS"
+  exit 1
+fi
+
+# Git exporta estas variables al hook; se limpian para no confundir a Flutter.
+unset GIT_DIR GIT_INDEX_FILE GIT_WORK_TREE
+
+# 2) El código debe respetar el formato oficial de Dart.
+if ! $DART format --output=none --set-exit-if-changed .; then
+  echo "[pre-commit] RECHAZADO: hay código sin formato. Ejecuta: dart format ."
+  exit 1
+fi
+
+# 3) El análisis estático (reglas del ejercicio 01) no debe tener problemas.
+if ! $FLUTTER analyze; then
+  echo "[pre-commit] RECHAZADO: corrige los problemas que muestra el análisis."
+  exit 1
+fi
+
+echo "[pre-commit] OK: commit permitido."
+exit 0

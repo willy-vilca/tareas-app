@@ -1,0 +1,48 @@
+# =====================================================================
+# EJERCICIO 03 - Pipeline de integración continua (CI)
+# Destino : .github/workflows/ci.yml
+# Probar  : git push  (o pestaña Actions > "CI" > Run workflow)
+#           -> check verde en unos 2 minutos.
+# =====================================================================
+name: CI
+
+# Cuándo se ejecuta: en cada push y Pull Request a main, o a mano.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Mínimo privilegio: el pipeline solo necesita leer el código.
+permissions:
+  contents: read
+
+jobs:
+  calidad:
+    name: Análisis y pruebas
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v5
+
+      - name: Instalar Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          # Opcional: crea la variable FLUTTER_VERSION en el repositorio
+          # para usar la misma versión que tienes en tu PC.
+          flutter-version: ${{ vars.FLUTTER_VERSION || '3.x' }}
+          cache: true
+
+      - name: Instalar dependencias
+        run: flutter pub get
+
+      - name: Verificar formato
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Análisis estático
+        run: flutter analyze
+
+      - name: Pruebas automáticas
+        run: flutter test
