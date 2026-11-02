@@ -18,7 +18,7 @@ jobs:
     name: 1. Pruebas
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -36,7 +36,7 @@ jobs:
       matrix:
         plataforma: [apk, web]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Instalar Java 17 (solo para Android)
         if: matrix.plataforma == 'apk'
